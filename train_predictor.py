@@ -192,6 +192,8 @@ print('the number of batches: ', num_batch)
 # train RCLSTM with different neural connection ratio
 dic = {}
 dic1 = {}
+d1 = {}
+d2 = {}
 
 print(train_X.shape)
 
@@ -272,7 +274,7 @@ for connectivity in [0.01, 0, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
     # compute test loss and average running time
     # tic = time.time()
 
-    iterations = 5000    # 重复计算的轮次
+    iterations = 300    # 重复计算的轮次
 
     random_input = torch.randn(input_size, hidden_size, 1).to(device)
     starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
@@ -345,6 +347,9 @@ for connectivity in [0.01, 0, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
 
     print(f"Under connectivity: {connectivity}, the test loss on test_set_a(AAT) is {test_loss_b}")
     print('\n')
+
+    d1[f'{connectivity}'] = float(test_loss_a)
+    d2[f'{connectivity}'] = float(test_loss_b)
 
     # 在 测试集上 画 时间-预测值 和 时间-实际值 图像
     if connectivity == 0.01:
@@ -476,6 +481,48 @@ ax2 = ax1.twinx()  # 创建共用x轴的第二个y轴
 color = 'tab:blue'
 ax2.set_ylabel('time(s)', color=color)
 ax2.plot(df_connectivity_time['connectivity ratio'], df_connectivity_time['time'], color=color)
+ax2.tick_params(axis='y', labelcolor=color)
+
+fig.tight_layout()
+plt.show()
+
+
+
+# 画 AAOI 和 AAT 连接率-test loss 图像
+with open('df_connectivity_loss_a.csv', 'w', newline='') as f:
+    writer = csv.writer(f)
+    for row in d1.items():
+        writer.writerow(row)
+
+with open('df_connectivity_loss_b.csv', 'w', newline='') as f:
+    writer = csv.writer(f)
+    for row in d2.items():
+        writer.writerow(row)
+
+df_connectivity_loss_a = pd.read_csv('df_connectivity_loss_a.csv')
+df_connectivity_loss_b = pd.read_csv('df_connectivity_loss_b.csv')
+
+
+df_connectivity_loss_a.columns = ['connectivity ratio', 'test_loss_a']
+df_connectivity_loss_b.columns = ['connectivity ratio', 'test_loss_b']
+
+# df_connectivity_loss.plot(x = 'connectivity ratio', y = 'test loss', kind='line')
+# df_connectivity_time.plot(x = 'connectivity ratio', y = 'time', kind='line')
+# plt.show()
+
+fig, ax1 = plt.subplots()
+
+color = 'tab:red'
+ax1.set_xlabel('connectivity ratio(%)')
+ax1.set_ylabel('test loss_a(%)', color=color)
+ax1.plot(df_connectivity_loss_a['connectivity ratio'], df_connectivity_loss_a['test_loss_a'], color=color)
+ax1.tick_params(axis='y', labelcolor=color)
+
+ax2 = ax1.twinx()  # 创建共用x轴的第二个y轴
+
+color = 'tab:blue'
+ax2.set_ylabel('test_loss_b(%)', color=color)
+ax2.plot(df_connectivity_loss_b['connectivity ratio'], df_connectivity_loss_b['test_loss_b'], color=color)
 ax2.tick_params(axis='y', labelcolor=color)
 
 fig.tight_layout()
